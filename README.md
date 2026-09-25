@@ -9,7 +9,9 @@
 
 This repository presents a hypothesis and its empirical demonstration: that Artificial General Intelligence does not require statistical compression of human knowledge, but rather a structured architecture of verifiable knowledge graphs, metacognitive orchestration, and on-demand learning — analogous to how human reasoning operates.
 
-We demonstrate this hypothesis through five progressive experiments, each proving a distinct property of the proposed architecture. The system does not predict. It derives. It does not memorize. It learns when it needs to. And it knows — precisely — what it does not know.
+We demonstrate this hypothesis through 21 progressive experiments. The first five each prove a distinct property of the proposed architecture; the following sixteen take it from proof of concept to an operable system — specialists built from documents, natural-language input and output, a benchmark against commercial LLMs, scale tests up to 5,000 nodes, persistent episodic memory and an authoring CLI. The system does not predict. It derives. It does not memorize. It learns when it needs to. And it knows — precisely — what it does not know.
+
+**At a glance:** 21 experiments · 379 automated tests · documented `FINDINGS.md` per experiment · benchmark against Gemini and Claude · scale-tested to 5,000 nodes.
 
 ---
 
@@ -292,9 +294,70 @@ Conclusion:
 
 ---
 
+## Experiments 06–21 — From Proof of Concept to Operable System
+
+Experiments 01–05 proved the core properties on hand-built graphs of 6–20 nodes. Experiments 06–21 attack the limitations those experiments declared: building specialists from documents instead of by hand, accepting natural language, measuring against LLMs, scaling, remembering, and making the system usable by someone who does not write Python.
+
+### Documents → Specialists (06, 09, 13, 14, 15, 16)
+
+| Exp | What it adds | Key result |
+|---|---|---|
+| 06 | Pipeline: structured markdown document → verified specialist | The parser detects knowledge gaps (`UnresolvedDependency`) **at parse time**, before the graph exists — the same gap mechanism as exp_01, moved earlier |
+| 09 | Stack specialist anchored to a base graph of complexity theory | Selective transitive closure: only the base nodes the document references are imported. Tests prove `push` is O(1) from the graph, not from a hard-coded answer |
+| 13 | Queue specialist | Exposed a latent axiom-extraction problem; the validator now rejects axioms that declare foundations |
+| 14 | New epistemic status `ALGORITHM` with declared inputs/outputs | Algorithms are first-class nodes, validated like theorems |
+| 15 | Specialist built from a full textbook chapter (algorithms, ch. 1) | First specialist at real-chapter size |
+| 16 | Minimal C++ specialist | Generates C++ code from knowledge nodes via declared templates |
+
+### Language and Interaction (07, 08, 17, 18)
+
+| Exp | What it adds | Key result |
+|---|---|---|
+| 07 | Spanish language specialist that turns instructions into algebra problems | The language graph is separate from the algebra graph; an incomplete parse **never** reaches the algebra specialist, and unrecognized tokens are reported instead of guessed |
+| 08 | Clarification mechanism | On an ambiguous concept the system asks (`ClarificationRequest`) instead of guessing. Deciding which tokens are concepts belongs to the orchestrator, not the resolver |
+| 17 | Vocabulary as node structure | Each node declares its surface forms; a central registry indexes them when specialists register — no manual propagation (44 tests) |
+| 18 | Self-contained verbalization | Spanish prose generated from declared expression templates, with no statistical component (42 tests) |
+
+### Measurement: LLM Benchmark and Scale (10, 11, 12)
+
+**Experiment 10 — Benchmark against LLMs.** Five canonical questions in three categories — A: solvable, B: outside the system's knowledge, C: requires a trace — run against the system and an external LLM (Gemini 2.5 Flash; Anthropic Claude supported). A dual metric separates *literal correctness* from *correct behavior for the category*.
+
+```
+qid   cat  system_ok  system_gap  llm_correct  llm_trace
+A1    A    ✓          —           ✓            ✗
+A2    A    ✓          —           ✓            ✗
+B1    B    ✓          declared    ✓            ✗
+B2    B    ✓          declared    ✓            ✗
+C1    C    ✓          —           ✓            ✗
+```
+
+The system declared a gap on both out-of-domain questions (quadratic equation, AVL search) instead of answering; the LLM answered all five plausibly — and correctly — but never with a verifiable structured trace. **Gaps declared by the system: 40%. Plausible LLM answers: 100%. Agreement: 60%.** The two properties are complementary, not contradictory.
+
+**Experiment 11 — Scale test.** Graphs from 10 to 5,000 nodes. Lookups stayed fast, but the run exposed a `RecursionError` at N ≥ 1,000 and superpolynomial backward chaining: **4,354 ms per query at N = 5,000** (×117,000 slower for a ×500 larger graph).
+
+**Experiment 12 — Optimizations, applied to the system itself.**
+
+| Operation | Before | After |
+|---|---|---|
+| `find_relations_producing` | O(N) scan | ~0.0003 ms, constant (×148) |
+| `transitive_foundations` (N = 500) | — | ×213 faster |
+| `backward_chaining` (N = 5,000) | 4,354 ms | **425 ms** |
+
+The `RecursionError` was fixed at the root, and all existing tests passed unchanged.
+
+### Memory, Conversation and Tooling (19, 20, 21)
+
+| Exp | What it adds | Key result |
+|---|---|---|
+| 19 | Full persistence and episodic memory | Sessions survive a restart. The conversation is itself an episodic graph under the same epistemic rules as any other graph; atomic IO (54 tests) |
+| 20 | User-introduced vocabulary and conversational epistemic state | "Let's call x…" definitions become nodes; each turn is tracked as affirmation, hypothesis, gap, clarification or agreement, and inconsistencies are flagged (53 tests) |
+| 21 | Authoring CLI (`agi-author`) | `validate / preview / build / list / show / remove / reload`: a new domain can be registered from a markdown document without writing Python, with 16 validation codes (44 tests) |
+
+---
+
 ## Key Findings Across All Experiments
 
-Twelve findings were documented across five `FINDINGS.md` files — not as bugs corrected, but as things the system taught us about itself during construction. Selected highlights:
+Every experiment keeps a `FINDINGS.md` — not a list of bugs corrected, but a record of what the system taught us about itself during construction. Selected highlights:
 
 **Finding: Recursive delegation was missing.** The original protocol limited delegation to the initiating specialist. Writing the cycle-detection tests revealed this asymmetry. The fix extended the protocol to allow any node in the chain to delegate — which is what the proposed architecture required all along.
 
@@ -419,21 +482,38 @@ Three numbers that cannot be produced by a statistical predictor:
 
 ## Running the Experiments
 
+Requires Python 3.12+. The core system uses only the standard library.
+
 ```bash
-git clone https://github.com/YOUR_USERNAME/agi-hypothesis
-cd agi-hypothesis
+git clone https://github.com/jptoror/agi-hypothesis-2026
+cd agi-hypothesis-2026
 
 pip install -r requirements.txt
 
-# Run all tests
+# Run all tests (379)
 python -m pytest
 
-# Run individual experiment demos
-python -m experiment_01.orchestrator
+# Core experiments
+python -m experiment_01.orchestrator.run_experiment
 python -m experiment_02.orchestrator
 python -m experiment_03.orchestrator
 python -m experiment_04.orchestrator
 python -m experiment_05.orchestrator
+
+# Language, clarification, algorithms, memory
+python -m experiment_07.orchestrator
+python -m experiment_08.orchestrator
+python -m experiment_14.demo
+python -m experiment_19.orchestrator
+python -m experiment_20.orchestrator
+
+# LLM benchmark (the LLM side is skipped if no key is set)
+export GOOGLE_API_KEY=...        # or ANTHROPIC_API_KEY=...
+python -m experiment_10.benchmark.demo
+
+# Authoring CLI
+python -m experiment_21.authoring validate experiment_21/data/sample_domain.md
+python -m experiment_21.authoring --help
 ```
 
 Each demo is self-contained and reproducible. The forensic numbers are stable across runs.
@@ -451,16 +531,16 @@ This research is explicit about what has and has not been demonstrated.
 - A documented record of what the system taught us during construction
 
 **What this is not yet:**
-- A system that parses natural language into knowledge nodes autonomously
-- Validated at scale — current graphs have 6–20 nodes per specialist
-- Tested against the full breadth of a real academic domain
+- A system that turns *arbitrary* prose into knowledge nodes — specialists are built from markdown documents that use the system's declared markers (exp_06, exp_21)
+- Validated beyond 5,000 nodes — backward chaining at that size takes ~425 ms per query (exp_12); larger graphs need further work, tracked in `OPEN_PROBLEMS.md`
+- Tested against the full breadth of a real academic domain — the largest specialist covers one textbook chapter (exp_15)
 - A claim that philosophical gaps (consciousness, genuine understanding) are solvable
 
-**Planned experiments:**
+**Next steps:**
 
-**Experiment 06 — Automatic specialist construction from structured documents.** A textbook's index, headings, definitions, and theorems are already a knowledge graph. An automatic parser could build a specialist from a chapter without manual node construction. This would demonstrate scalability.
-
-**Experiment 07 — Multi-hop reasoning across three or more specialists.** Current cross-domain reasoning involves two specialists. Problems at the intersection of three domains (e.g., biochemistry = biology + chemistry + physics) require multi-hop chains with cycle detection at depth.
+- **Multi-hop reasoning across three or more specialists.** Problems at the intersection of three domains (e.g., biochemistry = biology + chemistry + physics) require multi-hop chains with cycle detection at depth.
+- **A larger benchmark.** Exp_10 uses five canonical questions; a broader question set would turn the 40% / 100% / 60% signature into a statistically meaningful result.
+- **Open problems** are tracked in [`OPEN_PROBLEMS.md`](OPEN_PROBLEMS.md).
 
 ---
 
@@ -472,7 +552,7 @@ This is an open research project. Contributions are welcome in the following are
 - Additional hypothesis engine patterns beyond `SumOfEqualParts`
 - Formal verification of knowledge nodes (replacing Python lambdas with proof terms)
 - Parser for academic document structures → KnowledgeNode extraction
-- Benchmarks comparing derivation depth vs. LLM accuracy on novel problems
+- Larger benchmarks comparing derivation depth vs. LLM accuracy on novel problems (building on exp_10)
 
 If you are building on this work, please cite the FINDINGS.md files alongside the code — the documented failures and surprises are as scientifically valuable as the passing tests.
 
@@ -482,11 +562,12 @@ If you are building on this work, please cite the FINDINGS.md files alongside th
 
 ```
 @misc{agi-hypothesis-2026,
+  author = {Toro Rincon, Juan Pablo},
   title  = {AGI Hypothesis: Knowledge-Based Reasoning as a Path
              Toward Artificial General Intelligence},
   year   = {2026},
-  note   = {Work in progress. Five experiments demonstrated.
-             Source: https://github.com/YOUR_USERNAME/agi-hypothesis}
+  note   = {Work in progress. 21 experiments.
+             Source: https://github.com/jptoror/agi-hypothesis-2026}
 }
 ```
 
@@ -494,7 +575,15 @@ If you are building on this work, please cite the FINDINGS.md files alongside th
 
 ## License
 
-MIT — Use freely. Build on it. Prove us wrong. That would also be a contribution.
+Apache 2.0 — see [`LICENSE`](LICENSE). Use freely. Build on it. Prove us wrong. That would also be a contribution.
+
+---
+
+## Author
+
+**Juan Pablo Toro Rincon** — [GitHub](https://github.com/jptoror) · [LinkedIn](https://www.linkedin.com/in/juan-pablo-toro-rincon-58ba60a1)
+
+Developed with Claude Code as an AI pair programmer.
 
 ---
 

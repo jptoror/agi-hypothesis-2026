@@ -1,0 +1,5 @@
+pytest>=8
+
+# Optional: only needed for the LLM side of the exp_10 benchmark
+# anthropic
+# google-generativeai

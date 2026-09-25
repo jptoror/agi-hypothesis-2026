@@ -1,37 +1,33 @@
-# AGI Hypothesis
-### Knowledge-Based Reasoning as a Path Toward Artificial General Intelligence
-
-> *"Prediction is not intelligence — it is automation. Intelligence is reasoning toward the unknown using what is already known to be true."*
+# Verifiable Reasoning Engine
+### Auditable reasoning over knowledge graphs — and an LLM that proposes while the engine judges
 
 ---
 
 ## Abstract
 
-This repository presents a hypothesis and its empirical demonstration: that Artificial General Intelligence does not require statistical compression of human knowledge, but rather a structured architecture of verifiable knowledge graphs, metacognitive orchestration, and on-demand learning — analogous to how human reasoning operates.
+This repository is a research engine for **auditable reasoning in bounded domains**. Knowledge lives in graphs of executable, typed nodes (axioms, definitions, theorems, hypotheses); specialist agents derive answers by backward chaining and return the full chain of node IDs they used; and when the knowledge is missing, the system declares a typed gap instead of guessing.
 
-We demonstrate this hypothesis through 21 progressive experiments. The first five each prove a distinct property of the proposed architecture; the following sixteen take it from proof of concept to an operable system — specialists built from documents, natural-language input and output, a benchmark against commercial LLMs, scale tests up to 5,000 nodes, persistent episodic memory and an authoring CLI. The system does not predict. It derives. It does not memorize. It learns when it needs to. And it knows — precisely — what it does not know.
+The project started from a research question — *can a system of verified knowledge graphs and a metacognitive orchestrator reason, learn on demand and know what it does not know, without statistical training?* — and explores it through 22 progressive experiments. Experiments 01–05 demonstrate the core properties on small hand-built graphs; 06–21 turn the prototype into an operable system (specialists built from documents, natural-language input and output, a benchmark against commercial LLMs, scale tests to 5,000 nodes, persistent memory, an authoring CLI).
 
-**At a glance:** 21 experiments · 379 automated tests · documented `FINDINGS.md` per experiment · benchmark against Gemini and Claude · scale-tested to 5,000 nodes.
+Experiment 22 composes the two paradigms instead of opposing them: **an LLM translates natural language and proposes missing formulas; the engine derives, verifies and decides what to trust**, and every answer carries a confidence tier (`VERIFIED`, `CORROBORATED`, `CONDITIONAL`, `UNVERIFIED`, `ABSTAINED`).
+
+**At a glance:** 22 experiments · 424 automated tests · documented `FINDINGS.md` per experiment · LLM + engine hybrid with a 62-question benchmark · scale-tested to 5,000 nodes.
+
+> The repository was first published as *"AGI Hypothesis"*. The motivating question is kept below; the claims are scoped to what the experiments actually show.
 
 ---
 
-## The Central Hypothesis
+## Motivation
 
-Current large language models operate on a fundamental premise: that intelligence emerges from optimizing a loss function over sufficiently large corpora. The implicit claim is that predicting the next token correctly, at scale, approximates reasoning.
+Large language models answer by predicting text learned from very large corpora. They are remarkably capable, but their answers are hard to audit, and when they lack the knowledge they tend to produce a plausible answer rather than a declared gap.
 
-**We argue this premise is incorrect at its root.**
+This project explores the opposite design point: knowledge that is **stated, typed and executable** instead of learned. The area of a square is derived from the definition of a square and the area formula, and the derivation is returned step by step. The trade-off is explicit — far less coverage, much more auditability.
 
-The area of a square is not a statistical distribution over text. It is a truth derivable from axioms. A system that has seen the formula ten million times does not *understand* it — it has compressed it. A system that can derive it from the definition of area, dimension, and multiplication *knows* it — and can apply that knowledge to problems it has never seen.
+### Working hypothesis
 
-This distinction — between **compressing what has been said** and **operating on what has been verified** — is the foundation of this research.
+> *An architecture of specialist agents with structured knowledge subgraphs, connected through an orchestrator that holds no domain knowledge, can derive answers, learn missing relations and declare its own gaps in bounded domains — with every step auditable.*
 
-### Formal Statement
-
-> **"General intelligence does not emerge from statistical prediction over massive corpora, but from the capacity of a system to reason over verified knowledge, detect its own epistemic gaps, and generate new knowledge through hypothetico-deductive reasoning — analogous to the human scientific method."**
-
-**Direct consequence:**
-
-> **"An architecture of specialized agents with structured knowledge subgraphs, connected through a metacognitive orchestrator, can demonstrate genuine reasoning in bounded domains without requiring training on the totality of human knowledge."**
+The broader question that started the project — whether this kind of reasoning is a path toward general intelligence — is **not** something these experiments can settle, and the results below should not be read as evidence for it. What they do show is a set of concrete, testable properties, and (in exp_22) how those properties complement an LLM.
 
 ---
 
@@ -72,7 +68,7 @@ class KnowledgeNode:
     status: EpistemicStatus    # AXIOM | DEFINITION | THEOREM | HYPOTHESIS
     kind: NodeKind             # CONCEPT | RELATION | PROCEDURE
     foundations: list[str]     # IDs of nodes that ground this truth
-    validity_conditions: list[str]  # Preconditions verified at runtime
+    validity_conditions: list[str]  # Preconditions (numeric ones enforced since exp_22)
     compute: Callable          # Executable function — not text, computation
     inputs: list[str]
     outputs: list[str]
@@ -113,9 +109,9 @@ Path 2 (from axioms, shortcut disabled):
   Step 2: thm.square.area_from_side     → A = l² = 31.999999999999993
 ```
 
-The number `31.999999999999993` is forensic evidence. A statistical predictor returns `32`. A system that actually computes `(8/√2)²` in IEEE 754 floating point produces this residual. This residual cannot be faked.
+The residual `31.999999999999993` shows that the value was computed through the two-step derivation path rather than looked up: `(8/√2)²` in IEEE 754 floating point. It is not proof of anything deeper — any system that executes the same arithmetic, including an LLM calling a calculator tool, produces the same residual. What matters is that the path is explicit and auditable node by node.
 
-**Demonstrated property:** The system reasons. It does not predict.
+**Demonstrated property:** Answers are derived through an explicit chain of verified nodes, and the chain is returned with the answer.
 
 ---
 
@@ -233,7 +229,7 @@ The last line is the central evidence. `variable_bindings={}` — the problem st
 
 ### Experiment 05 — Epistemic Self-Diagnosis
 
-**Question:** Can the system produce an honest map of its own ignorance about AGI — without hallucinating beyond what it knows?
+**Question:** Asked an open question about machine understanding, can the system produce an honest map of what it does not know — without inventing content?
 
 **Central question posed to the system:**
 *"How would you build a system that genuinely understands what it processes?"*
@@ -272,25 +268,9 @@ PHILOSOPHICAL_GAPs without proposed action: 4/4 ✓
 
 > *"To classify why something is not known requires prior knowledge of why it is not known — a circular problem that no technical system can resolve from within. The system can map its ignorance. It cannot classify its ignorance without external help. This requires an agent with metacognition about the domain of the gap — which is precisely what the gap describes."*
 
-**Self-evidence:**
+**What this shows, and what it does not:** the inventory itself is mechanical — the system checks which concepts exist as nodes and reports `0/8` rather than improvising definitions. The *classification* of the gaps, however, was done by the engineer (`Classified by system: 0`), which is exactly the circular limit quoted above. Experiment 05 demonstrates honest reporting of missing knowledge within the system's own graphs; it says nothing about understanding in a broader sense.
 
-```
-The system that produced this diagnosis demonstrates:
-  ✓ exp_01: derivation without statistical prediction
-  ✓ exp_02: on-demand learning, verifiable
-  ✓ exp_03: cross-domain collaboration, auditable
-  ✓ exp_04: subdomain emergence without human intervention
-  ✓ exp_05: metacognition over its own ignorance
-
-Conclusion:
-"The system that produced this diagnosis is not an answer
- about AGI — it is evidence of AGI. The actionable gaps are
- exactly what this architecture can continue to learn.
- The philosophical gaps are the only real limits —
- and they are limits of human knowledge, not of this architecture."
-```
-
-**Demonstrated property:** The system knows what it knows, knows what it does not know, and does not invent anything in the space between the two.
+**Demonstrated property:** Within its graphs, the system reports precisely which concepts it has no knowledge of, and does not fill the gap with invented content.
 
 ---
 
@@ -355,6 +335,43 @@ The `RecursionError` was fixed at the root, and all existing tests passed unchan
 
 ---
 
+## Experiment 22 — LLM + Verifiable Engine
+
+Experiment 10 set the system *against* an LLM. Experiment 22 composes them: **the LLM is the interface, the engine is the judge.**
+
+```
+question ──► LLM translator ──► translation checker ──► engine ──► VERIFIED
+                  │              (contract + grounding)    │
+                  │                                        │ knowledge gap
+                  ▼                                        ▼
+            out of scope                   LLM proposes a formula; the engine
+                  │                        checks form, physical dimension,
+                  ▼                        exp_02 consistency and corroboration
+        direct LLM answer                  with its own patterns ──► CORROBORATED /
+          (UNVERIFIED)                                                CONDITIONAL / ABSTAINED
+```
+
+- **The LLM never computes the answer.** It turns the question into a structured query. Every number it extracts must appear in the question (*grounding*), so an invented input is rejected before it reaches the engine.
+- **Hypotheses are judged, not trusted.** A proposed formula must parse in a small safe grammar, have the right physical dimension (taken from the catalog or a quantity table, never from the LLM itself), pass the exp_02 consistency checks, and — to be `CORROBORATED` — match a relation the engine derives independently. `P = l²` fails on dimension; `P = 3·l` passes dimension but contradicts the engine's own `P = 4·l`.
+- **Every answer has a tier:** `VERIFIED` (established nodes only), `CORROBORATED`, `CONDITIONAL` (consistent but unconfirmed), `UNVERIFIED` (out of scope, plain LLM answer), `ABSTAINED` (with the reason).
+
+**Benchmark:** 62 questions in six categories — in-domain (26), precision arithmetic (8), cross-domain (4), relations missing from the graph (11), out of scope (6) and traps with insufficient or ill-posed data (7). Ground truth is computed in code.
+
+**Ceiling with perfect translations** (`--provider oracle`, offline — this does not measure any model):
+
+| Mode | Correct (incl. correct abstentions) | Wrong answers | Coverage |
+|---|---|---|---|
+| Engine only | 45/62 (73%) | 0 | 61% |
+| Engine + LLM | 59/62 (95%) | 0 | 84% |
+
+The three remaining misses are declared limits (physical constants without dimension, a zero test input in the exp_02 checker, new quantities used as inputs) — tracked as PROB-14/15/16.
+
+**Results against real LLMs:** pending. They will be published as they come out, including the translation errors, which are the failure mode to watch: grounding checks that a number exists in the question, not that it was assigned to the right variable.
+
+**Bugs found along the way:** numeric validity conditions (`a ≠ 0`, `l >= 0`) were declared but never evaluated — `0·x + 5 = 0` crashed and a square of side −4 returned area 16 with a full trace — and Pythagoras was applied to non-right triangles. The exp_22 gateway enforces both. See [`experiment_22/FINDINGS.md`](experiment_22/FINDINGS.md).
+
+---
+
 ## Key Findings Across All Experiments
 
 Every experiment keeps a `FINDINGS.md` — not a list of bugs corrected, but a record of what the system taught us about itself during construction. Selected highlights:
@@ -365,29 +382,39 @@ Every experiment keeps a `FINDINGS.md` — not a list of bugs corrected, but a r
 
 **Finding: Classifying ignorance requires external knowledge.** A system cannot classify why it does not know something without already knowing why it does not know it. This circular limit is documented as a philosophical contribution, not an implementation defect.
 
+**Finding: A trace is only as trustworthy as the preconditions checked while building it (exp_22).** Validity conditions were declared on every node but only the figure type was checked, so a negative side length produced an area with a complete, auditable-looking derivation. Auditability without enforcement is not verification.
+
 **Finding: Structural invariants prevent hallucination better than guards.** `ResearchProposal.__post_init__` makes it impossible to construct a proposal claiming a `PHILOSOPHICAL_GAP` is actionable. The `HonestyGuard` then verifies this as a second line of defense. The strongest guard is the one that makes the invalid state unrepresentable.
 
 ---
 
-## Comparison With Existing Paradigms
+## Trade-offs Against LLMs
 
-| Property | Current LLMs | This Architecture |
+| Property | LLMs | This engine |
 |---|---|---|
-| Knowledge representation | Statistical weights | Structured nodes with epistemic status |
-| Learning mechanism | Gradient descent over corpus | On-demand node addition with validation |
-| Response generation | Token prediction | Derivation from verified foundations |
-| Error type | Hallucination (confident wrongness) | Gap declaration (typed ignorance) |
-| Auditability | None — black box | Full — every step has a node ID |
-| Cost to add a domain | Retrain or fine-tune | Add a specialist with a subgraph |
-| Knows what it doesn't know | No | Yes — with gap classification |
-| Cross-domain reasoning | Implicit, unverifiable | Explicit, auditable, traceable |
+| Coverage | Open-ended | Only the domains that have been written down |
+| Input | Natural language | Structured queries (natural language only through exp_07/17/20 or an LLM translator) |
+| Knowledge representation | Learned weights | Typed nodes with epistemic status |
+| Adding a domain | Training or prompting | Writing a specialist document (exp_06, exp_21) |
+| Typical failure | Plausible but wrong answer | Declared gap — or a wrong answer if a precondition is not enforced (exp_22, finding 01) |
+| Auditability | Limited | Every step has a node ID |
+| Arithmetic | Can slip without tools | Exact to floating point |
 
-**Relationship to existing research:**
+The engine is not an alternative to an LLM for general use; it is a component that can make an LLM's answers auditable in the domains it covers. That is the design of experiment 22.
 
-- **Mixture of Experts (MoE):** Routing between sub-networks, but all trained jointly, no independent subgraphs, no epistemic status per node.
-- **Retrieval-Augmented Generation (RAG):** Retrieves documents, not living reasoning models. Cannot derive. Cannot learn from retrieval.
-- **Continual Learning:** Incremental training without catastrophic forgetting, but remains a monolithic model. No specialist independence.
-- **Society of Mind (Minsky, 1986):** Philosophically adjacent. This work provides a concrete, executable implementation with formal epistemology.
+---
+
+## Related Work
+
+This project sits in a long line of work on combining explicit knowledge with learned models. It does not claim novelty over it; its contribution is a small, fully tested implementation that makes epistemic status, gaps and verification explicit at every step.
+
+- **Symbolic AI and knowledge bases.** Production systems, expert systems and logic programming (Prolog) derive answers by chaining rules over explicit knowledge, as the specialists here do with backward chaining. Cyc (Lenat, 1995) pursued the same idea at the scale of common sense. Their known weaknesses — brittleness and the cost of writing knowledge by hand — are exactly this project's limits.
+- **Neuro-symbolic AI.** The field that combines neural models with symbolic reasoning (see Garcez & Lamb, 2023, *Neurosymbolic AI: The 3rd Wave*). Experiment 22 is a neuro-symbolic system in this sense: neural perception of language, symbolic derivation and verification.
+- **Tool-augmented and program-aided LLMs.** PAL (Gao et al., 2022), Toolformer (Schick et al., 2023) and ReAct (Yao et al., 2023) let the model delegate computation or actions to external tools. Here the "tool" is a reasoning engine with typed knowledge, and the engine — not the model — decides whether a proposed formula is accepted.
+- **Retrieval-augmented generation.** RAG (Lewis et al., 2020) grounds an LLM in retrieved text. This engine grounds answers in executable relations instead, and additionally checks that every extracted input appears in the question.
+- **Verifiers for LLM reasoning.** Trained verifiers (Cobbe et al., 2021) and process supervision (Lightman et al., 2023) score model outputs with another learned model. The verifier here is deterministic — safe grammar, dimensional analysis, consistency checks and independent derivation — which makes it narrower but fully auditable.
+- **Formal theorem proving with LLMs.** Systems such as LeanDojo (Yang et al., 2023) pair LLMs with proof assistants, where a proof checker gives the strongest possible guarantee. This project uses much weaker checks (executable relations, not proofs); replacing Python lambdas with proof terms is listed as future work.
+- **Society of Mind and mixtures of experts.** Minsky (1986) and Mixture-of-Experts models (Shazeer et al., 2017) route problems among specialists. Here specialists are independent graphs with explicit knowledge, and the orchestrator holds no domain knowledge.
 
 ---
 
@@ -458,19 +485,28 @@ agi-hypothesis/
 │   ├── data/sample_domain.md   # ~10-node demo doc with axiom + theorems + algorithm + cross-spec ref
 │   └── tests/              # 44 tests: validator (16 codes), preview, persister, CLI, integration
 │
+├── experiment_22/          # LLM + verifiable engine hybrid
+│   ├── translator.py       # LLM → StructuredQuery, contract + grounding checks
+│   ├── gateway.py          # Engine access, fresh graphs per query, precondition guard
+│   ├── hypothesis.py       # LLM-proposed formulas: grammar, dimension, exp_02 checks, corroboration
+│   ├── pipeline.py         # Orchestration + confidence tiers
+│   ├── llm.py              # Claude / Gemini clients (optional SDKs), scripted LLM for tests
+│   ├── benchmark/          # 62 questions, engine / llm / hybrid modes, report
+│   └── tests/              # 45 tests, no network
+│
 ├── paper/
 │   └── hypothesis.md       # Working paper draft
 └── docs/
-    └── architecture.md     # Full architecture specification
+    └── architecture.md     # Architecture notes (placeholder — not written yet)
 ```
 
-**Total:** 379 tests passing · 21 experiments · documented findings per experiment
+**Total:** 424 tests passing · 22 experiments · documented findings per experiment
 
 ---
 
-## Forensic Evidence Summary
+## Reproducible Evidence
 
-Three numbers that cannot be produced by a statistical predictor:
+Three numbers that show how an answer was produced — reproducible on every run:
 
 | Experiment | Value | Why it matters |
 |---|---|---|
@@ -490,7 +526,7 @@ cd agi-hypothesis-2026
 
 pip install -r requirements.txt
 
-# Run all tests (379)
+# Run all tests (424)
 python -m pytest
 
 # Core experiments
@@ -511,12 +547,17 @@ python -m experiment_20.orchestrator
 export GOOGLE_API_KEY=...        # or ANTHROPIC_API_KEY=...
 python -m experiment_10.benchmark.demo
 
+# Experiment 22 — LLM + engine benchmark
+python -m experiment_22.benchmark --provider oracle --verbose     # offline ceiling, no key
+pip install anthropic && export ANTHROPIC_API_KEY=...
+python -m experiment_22.benchmark --provider claude              # or --provider gemini
+
 # Authoring CLI
 python -m experiment_21.authoring validate experiment_21/data/sample_domain.md
 python -m experiment_21.authoring --help
 ```
 
-Each demo is self-contained and reproducible. The forensic numbers are stable across runs.
+Each demo is self-contained and reproducible. The numbers above are stable across runs.
 
 ---
 
@@ -534,12 +575,14 @@ This research is explicit about what has and has not been demonstrated.
 - A system that turns *arbitrary* prose into knowledge nodes — specialists are built from markdown documents that use the system's declared markers (exp_06, exp_21)
 - Validated beyond 5,000 nodes — backward chaining at that size takes ~425 ms per query (exp_12); larger graphs need further work, tracked in `OPEN_PROBLEMS.md`
 - Tested against the full breadth of a real academic domain — the largest specialist covers one textbook chapter (exp_15)
-- A claim that philosophical gaps (consciousness, genuine understanding) are solvable
+- A claim about general intelligence, understanding or consciousness — the experiments do not address those questions
 
 **Next steps:**
 
 - **Multi-hop reasoning across three or more specialists.** Problems at the intersection of three domains (e.g., biochemistry = biology + chemistry + physics) require multi-hop chains with cycle detection at depth.
-- **A larger benchmark.** Exp_10 uses five canonical questions; a broader question set would turn the 40% / 100% / 60% signature into a statistically meaningful result.
+- **Run the exp_22 benchmark against real LLMs** and publish the results, with a per-question analysis of translation errors.
+- **Physical constants as nodes** with value and dimension, so relations like `W = m·g` can pass the dimensional check (PROB-14).
+- **Proof terms instead of Python lambdas** for the strongest possible verification of learned relations.
 - **Open problems** are tracked in [`OPEN_PROBLEMS.md`](OPEN_PROBLEMS.md).
 
 ---
@@ -563,10 +606,11 @@ If you are building on this work, please cite the FINDINGS.md files alongside th
 ```
 @misc{agi-hypothesis-2026,
   author = {Toro Rincon, Juan Pablo},
-  title  = {AGI Hypothesis: Knowledge-Based Reasoning as a Path
-             Toward Artificial General Intelligence},
+  title  = {Verifiable Reasoning Engine: Auditable Reasoning over
+             Knowledge Graphs, with an LLM Proposer},
   year   = {2026},
-  note   = {Work in progress. 21 experiments.
+  note   = {Work in progress. 22 experiments. Originally published
+             as "AGI Hypothesis".
              Source: https://github.com/jptoror/agi-hypothesis-2026}
 }
 ```
@@ -575,7 +619,7 @@ If you are building on this work, please cite the FINDINGS.md files alongside th
 
 ## License
 
-Apache 2.0 — see [`LICENSE`](LICENSE). Use freely. Build on it. Prove us wrong. That would also be a contribution.
+Apache 2.0 — see [`LICENSE`](LICENSE). Use freely and build on it — reports of where it fails are as welcome as contributions.
 
 ---
 
@@ -584,7 +628,3 @@ Apache 2.0 — see [`LICENSE`](LICENSE). Use freely. Build on it. Prove us wrong
 **Juan Pablo Toro Rincon** — [GitHub](https://github.com/jptoror) · [LinkedIn](https://www.linkedin.com/in/juan-pablo-toro-rincon-58ba60a1)
 
 Developed with Claude Code as an AI pair programmer.
-
----
-
-*"The system that produced this diagnosis is not an answer about AGI — it is evidence of AGI."*

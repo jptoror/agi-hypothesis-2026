@@ -141,7 +141,20 @@ y qué soluciones son candidatas cuando haya evidencia suficiente.
   - Parser de expresiones matemáticas simples
   - Integración con sympy para evaluación simbólica
   - Campo structured_conditions separado del NL
-**Estado:** Pendiente
+**Trabajo realizado (experiment_22):**
+  - `experiment_22/gateway.py` envuelve cada `compute` con una guarda
+    que evalúa las condiciones numéricas simples ('a ≠ 0', 'l >= 0',
+    'm >= 0') contra las entradas reales. Una violación es un gap
+    declarado, no un `ZeroDivisionError` ni un área de 16 para un lado
+    de -4.
+  - La misma guarda desactiva los nodos que exigen un triángulo
+    rectángulo cuando el contexto es un triángulo genérico: la
+    heurística del exp_01 aceptaba cualquier 'triangle*' y aplicaba
+    Pitágoras a triángulos no rectángulos.
+  - Las condiciones en prosa ("a, b, c son longitudes no negativas")
+    siguen sin evaluarse.
+**Estado:** PARCIAL — resuelto para condiciones numéricas simples en
+            el gateway del exp_22; el razonador del exp_01 no cambia.
 
 ---
 
@@ -492,3 +505,49 @@ y qué soluciones son candidatas cuando haya evidencia suficiente.
 **Estado:** ABIERTO — scope para experiment_21/22. El campo
             reservado evita migración de datos cuando la
             funcionalidad se implemente.
+
+---
+
+## PROB-14 — Constantes físicas sin dimensión
+**Detectado en:** experiment_22 (pregunta LE-10)
+**Síntoma:** La hipótesis `W = 9.81 · m` es físicamente correcta, pero
+             el check dimensional la rechaza: 9.81 es un número sin
+             dimensión en la gramática, así que la expresión tiene
+             dimensión M y un peso es M·L·T⁻².
+**Impacto:** Toda relación que dependa de una constante física (g, G,
+             c) se rechaza. El error es conservador (abstención, no
+             respuesta falsa), pero reduce la cobertura.
+**Soluciones candidatas:**
+  - Constantes declaradas como nodos AXIOM con valor y dimensión
+    (`const.g = 9.81 L·T⁻²`), citables como variables por la hipótesis.
+**Estado:** ABIERTO
+
+---
+
+## PROB-15 — El check de ejecución del exp_02 prueba con entradas cero
+**Detectado en:** experiment_22 (pregunta LE-11)
+**Síntoma:** `ConsistencyValidator` ejecuta el compute con todas las
+             entradas a 0.0. Una relación correcta con división
+             (`v = sqrt(2·Ec/m)`) lanza ZeroDivisionError y se rechaza.
+**Impacto:** Se rechazan hipótesis válidas cuyo dominio excluye el cero.
+**Soluciones candidatas:**
+  - Casos de prueba derivados de las condiciones de validez de la
+    hipótesis (`m > 0` → probar con m positivo).
+  - Distinguir "indefinido en un punto" de "incorrecto".
+**Estado:** ABIERTO
+
+---
+
+## PROB-16 — Magnitudes nuevas sólo como salida, nunca como entrada
+**Detectado en:** experiment_22 (pregunta LE-8)
+**Síntoma:** "Un cuadrado tiene perímetro 20, ¿cuál es su área?" se
+             rechaza en la traducción: P no es una variable del
+             catálogo, así que no puede ser un dato conocido.
+**Impacto:** El sistema puede aprender P = 4·l, pero no usar P como
+             punto de partida en la misma pregunta.
+**Soluciones candidatas:**
+  - Admitir variables nuevas en `known` cuando la magnitud tiene
+    dimensión conocida, y dejar que el broker proponga el eslabón
+    inverso.
+**Estado:** ABIERTO
+

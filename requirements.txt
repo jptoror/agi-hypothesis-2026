@@ -1,5 +1,6 @@
 pytest>=8
 
-# Optional: only needed for the LLM side of the exp_10 benchmark
-# anthropic
-# google-generativeai
+# Optional: only needed to run the LLM side of the benchmarks
+# anthropic        # exp_10, exp_22 (--provider claude)
+# google-genai     # exp_22 (--provider gemini)
+# google-generativeai  # exp_10 Gemini runner (deprecated SDK)
